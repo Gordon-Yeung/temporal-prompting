@@ -4,7 +4,12 @@ This file tells Claude Code how the project is structured so it can assist accur
 
 ## What This Project Does
 
-Tests four prompting conditions for LLM-based thematic analysis of classroom transcripts. The core variable is whether the prompt asks the model to treat turn-level data as temporally ordered (tracking how teacher orientations *shift*) versus as a static document. See README.md for the research framing.
+This repo holds **two related studies** over the same classroom-transcript corpus. See README.md for the full research framing.
+
+- **Study 1 — Temporal Prompting.** Tests four prompting conditions for LLM-based thematic analysis. The core variable is whether the prompt asks the model to treat turn-level data as temporally ordered (tracking how teacher orientations *shift*) versus as a static document. Runs only on the two fully-coded cases (706, 543). Driven by `scripts/run_condition.py` / `run_all_conditions.py`.
+- **Study 2 — Deficit-Language Analysis.** Batch-scans *all* transcripts for deficit-based teacher language across seven categories, with mandatory verbatim quote verification. Driven by `scripts/deficit_analysis.py`; criteria live in `prompts/deficit_language_analysis_spec.txt`.
+
+The two studies share transcript data and the same principle — Claude does the language analysis, every claim is verified against source — but answer different questions (Study 1 is methodological; Study 2 is substantive).
 
 ## Data Schemas
 
@@ -39,6 +44,20 @@ Wide-format outputs. Each condition occupies one column. The first few rows are:
 - Row 5+: thematic content (themes and elaborations)
 
 Do not treat this as a standard row-indexed table. When appending a new condition result, add a column to the right.
+
+### `data/deficit_scenes/run_<YYYY-MM-DD_HHMMSS>/` (Study 2 output)
+
+Each run is a **timestamped folder** — never overwrite a prior run. Contents:
+
+| File | Contents |
+|------|----------|
+| `<source>.deficit.json` | Per-transcript scenes (empty `scenes: []` if none) |
+| `all_scenes.json` | Flat array of every scene across all documents |
+| `run_summary.csv` | `source_document_id, scenes_found, high_conf, medium_conf, low_conf` |
+| `DEFICIT_ANALYSIS_REPORT.md` / `.txt` | Human-readable report |
+| `skipped_quotes.log` / `errors.log` | Only written if there were skips/errors |
+
+Per-scene JSON shape: `turn_range`, `deficit_span` (`speaker`, `turns`, `verbatim_quote`), `context_excerpt` (±3 turns), `categories` (A–G), `rationale`, `confidence` (`high`/`medium`/`low`). Full shape is defined in `prompts/deficit_language_analysis_spec.txt`.
 
 ## Conditions Registry
 
@@ -76,6 +95,32 @@ It reads `conditions.json`, loads the right input file, appends the prompt, call
 2. Register it in `prompts/conditions.json` (see schema above)
 3. Run the pipeline script — no code changes needed
 
+## Deficit-Language Pipeline (Study 2)
+
+`scripts/deficit_analysis.py` scans **every** transcript in `data/transcripts/` and flags
+deficit-based teacher language. Run it with:
+
+```
+python scripts/deficit_analysis.py
+```
+
+Key facts for anyone editing this script:
+
+- **Paths are hard-coded** at the top (`INPUT_DIR`, `OUTPUT_BASE`) and currently point at a
+  different user's checkout (`C:\Users\Gordon Yeung\...`). They must be corrected to the
+  local checkout before the script runs. Prefer making them repo-relative if you touch this.
+- **Same CSV loader concerns as Study 1**: handles UTF-8 BOM and both column schemas
+  (`text` vs `cleaned_text`).
+- **The system prompt is the criteria.** `ANALYSIS_SYSTEM_PROMPT` in the script mirrors
+  `prompts/deficit_language_analysis_spec.txt`. If you change detection behavior, keep the
+  script prompt and the spec in sync — the spec is the source of truth.
+- **Quote verification is mandatory and must not be weakened.** Every scene's
+  `verbatim_quote` is normalized and matched back into the source; unmatched scenes are
+  dropped and logged. This is a research-integrity guarantee, not an optimization.
+- **Conservative bias is intentional.** A false positive is worse than a miss. Do not tune
+  toward higher recall without researcher sign-off.
+- Uses `claude-opus-4-8` with adaptive thinking; `CONTEXT_TURNS = 3` controls the context window per scene.
+
 ## Naming Conventions
 
 | Artifact | Pattern | Example |
@@ -100,6 +145,9 @@ The `ANTHROPIC_API_KEY` environment variable must be set. The script does not ha
 - Column names in coded CSVs (downstream analysis depends on exact headers)
 - The `input_type` values in `conditions.json` (must stay `"coded"` or `"transcript"`)
 - The episode/commentary row structure in coded CSVs
+- The verbatim quote-verification step in `deficit_analysis.py` (research-integrity guarantee)
+- The deficit category definitions (A–G) or confidence rubric in `deficit_language_analysis_spec.txt`
+- The timestamped-run-folder convention for `data/deficit_scenes/` (prior runs must never be overwritten)
 
 ## How to Work with Claude Code
 
