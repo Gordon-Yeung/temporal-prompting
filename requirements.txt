@@ -1,0 +1,5 @@
+# Core LLM pipeline (Study 1 & 2)
+anthropic>=0.40
+
+# Human coding tool (tools/coder/)
+Flask>=3.0,<4.0

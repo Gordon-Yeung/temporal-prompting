@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deficit-Language Coding Tool</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Deficit-Language Coding</div>
+    <nav class="tabs">
+      <a href="#code" data-tab="code">Code</a>
+      <a href="#codebook" data-tab="codebook">Codebook</a>
+      <a href="#progress" data-tab="progress">Progress</a>
+      <a href="#compare" data-tab="compare">Compare &amp; Adjudicate</a>
+    </nav>
+  </header>
+
+  <!-- ============================ CODE ============================ -->
+  <section id="view-code" class="view">
+    <div class="controls">
+      <label>Coder
+        <input id="coder-id" type="text" placeholder="your name/id" autocomplete="off" />
+      </label>
+      <label>Transcript
+        <select id="transcript-select"></select>
+      </label>
+      <button id="load-btn">Load / Resume</button>
+      <button id="save-now-btn" class="secondary" title="Autosaves anyway; this forces an immediate write">Save now</button>
+      <span id="progress-info" class="muted"></span>
+      <span id="save-status" class="save-status">Autosaves as you code</span>
+    </div>
+    <div id="unverified-warn" class="warn hidden"></div>
+    <div id="transcript" class="transcript"></div>
+  </section>
+
+  <!-- ============================ CODEBOOK ============================ -->
+  <section id="view-codebook" class="view hidden">
+    <h2>Codebook</h2>
+    <p class="muted">Curated from <code>prompts/deficit_language_analysis_spec.txt</code> (the source of truth).
+      Deficit framing locates the problem <b>inside the student</b> — treating difficulty as a stable
+      property of the learner rather than a feature of the task, the moment, or the instruction.
+      When in doubt, don't flag; a false positive is worse than a miss.</p>
+
+    <h3>Flag when it fits one or more categories</h3>
+    <div class="cb-grid">
+      <div class="cb-card"><span class="cb-code">A</span><b>Fixed-Ability Framing</b>
+        <p>Ability treated as innate/permanent, an unchangeable trait.</p>
+        <em>"she's just not a math person", "he's not a reader"</em></div>
+      <div class="cb-card"><span class="cb-code">B</span><b>Deficit Labeling / Grouping</b>
+        <p>Students named by what they lack; group identity defined by deficit.</p>
+        <em>"my low kids", "the struggling group", "the ones who can't read"</em></div>
+      <div class="cb-card"><span class="cb-code">C</span><b>Problem in Student / Home / Background</b>
+        <p>Locates the cause in the student or their background rather than instruction or task design.</p>
+        <em>"they come from homes where...", "these students don't have..."</em></div>
+      <div class="cb-card"><span class="cb-code">D</span><b>Deficit Attribution (Behavior/Motivation)</b>
+        <p>Assigns negative motives instead of examining instructional conditions.</p>
+        <em>"they just don't care", "he's lazy", "she's not trying"</em></div>
+      <div class="cb-card"><span class="cb-code">E</span><b>Lowered Expectations</b>
+        <p>Cognitive demand reduced and justified by perceived inability.</p>
+        <em>"they can't handle complex problems, so I just give them facts"</em></div>
+      <div class="cb-card"><span class="cb-code">F</span><b>Comparative Deficit</b>
+        <p>A student or class defined by falling short of another; worth measured by comparison.</p>
+        <em>"not as good as last year's class", "behind the advanced kids"</em></div>
+      <div class="cb-card"><span class="cb-code">G</span><b>Totalizing Negation</b>
+        <p>Sweeping "can't / doesn't understand anything" — all-or-nothing framing.</p>
+        <em>"this group can't do anything right", "she doesn't get any of it"</em></div>
+      <div class="cb-card other"><span class="cb-code">Other</span><b>Other (specify)</b>
+        <p>Clear deficit framing that doesn't fit A–G. Describe it in the "Other: specify" box and the note.</p>
+        <em>Use sparingly — prefer an A–G category if one fits.</em></div>
+    </div>
+
+    <h3>Do <u>not</u> flag these</h3>
+    <ul class="cb-list">
+      <li><b>Neutral, specific error description</b> — "that answer isn't right, let's check line 3" <span class="muted">(names the error, not the child)</span></li>
+      <li><b>Factual formative assessment</b> — "about half haven't got the inequality sign yet" <span class="muted">(descriptive, not evaluative)</span></li>
+      <li><b>High-demand questioning / productive struggle</b> — "try it before I help", "what do you notice?" <span class="muted">(positions students as capable)</span></li>
+      <li><b>Encouragement / asset-based moves</b> — "I know this is hard, and I see you working through it"</li>
+      <li><b>Ambiguous cases</b> — prefer not flagging; if you do, mark confidence <b>low</b> and explain the tension in the note.</li>
+    </ul>
+
+    <h3>Confidence</h3>
+    <div class="cb-grid">
+      <div class="cb-card"><b>high</b><p>Clear, unambiguous deficit framing; strong category match; explicit ability or motivation attribution.</p><em>"she's just not good at math"</em></div>
+      <div class="cb-card"><b>medium</b><p>Deficit reading present but with some ambiguity; context supports it; more likely deficit than neutral. <b>The default.</b></p><em>"they struggle with comprehension"</em></div>
+      <div class="cb-card"><b>low</b><p>Genuinely ambiguous between deficit and neutral; needs charitable reading. Flag to discuss, not to assert — explain the tension.</p><em>"about half the class hasn't mastered this yet"</em></div>
+    </div>
+  </section>
+
+  <!-- ============================ PROGRESS ============================ -->
+  <section id="view-progress" class="view hidden">
+    <h2>Coding progress</h2>
+    <p class="muted">Every transcript and the coder files found on disk under
+      <code>data/human_coding/</code>.</p>
+    <div id="status-table"></div>
+  </section>
+
+  <!-- ============================ COMPARE ============================ -->
+  <section id="view-compare" class="view hidden">
+    <div class="controls">
+      <label>Transcript
+        <select id="cmp-transcript"></select>
+      </label>
+      <label>Coder A
+        <select id="cmp-a"></select>
+      </label>
+      <label>Coder B
+        <select id="cmp-b"></select>
+      </label>
+      <label class="check"><input id="cmp-llm" type="checkbox" /> include LLM</label>
+      <button id="cmp-run">Compare</button>
+      <button id="cmp-import-llm" class="secondary">Import LLM scenes</button>
+    </div>
+    <div id="cmp-stats" class="stats"></div>
+    <div id="cmp-rows" class="cmp-rows"></div>
+    <div class="controls adj-bar hidden" id="adj-bar">
+      <button id="adj-save">Save adjudicated.json</button>
+      <span id="adj-status" class="muted"></span>
+    </div>
+  </section>
+
+  <!-- category reference, shared -->
+  <template id="cat-legend">
+    <span data-c="A" title="Fixed-Ability Framing">A</span>
+    <span data-c="B" title="Deficit Labeling/Grouping">B</span>
+    <span data-c="C" title="Problem Located in Student/Home/Background">C</span>
+    <span data-c="D" title="Deficit Attribution for Behavior/Motivation">D</span>
+    <span data-c="E" title="Lowered Expectations">E</span>
+    <span data-c="F" title="Comparative Deficit">F</span>
+    <span data-c="G" title="Totalizing Negation">G</span>
+    <span data-c="Other" title="Other (specify)">Other</span>
+  </template>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/compare.js"></script>
+</body>
+</html>
